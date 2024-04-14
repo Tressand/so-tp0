@@ -1,5 +1,6 @@
 #include "utils.h"
 
+t_log* logger;
 
 void* serializar_paquete(t_paquete* paquete, int bytes)
 {
@@ -26,16 +27,28 @@ int crear_conexion(char *ip, char* puerto)
 	hints.ai_socktype = SOCK_STREAM;
 	hints.ai_flags = AI_PASSIVE;
 
-	getaddrinfo(ip, puerto, &hints, &server_info);
+	int error;
+
+	error = getaddrinfo(ip, puerto, &hints, &server_info);
+	if(error == -1) {
+		log_error(logger, "getaddrinfo failed on utils.c|crear_conexion");
+		return error;
+	}
 
 	// Ahora vamos a crear el socket.
-	int socket_cliente = 0;
+	int socket_cliente = socket(server_info->ai_family,
+							    server_info->ai_socktype,
+							    server_info->ai_protocol);
 
 	// Ahora que tenemos el socket, vamos a conectarlo
 
+	error = connect(socket_cliente, server_info->ai_addr, server_info->ai_addrlen);
+	if(error == -1) {
+		log_error(logger, "connect Syscall failed on utils.c|crear_conexion");
+		return error;
+	}
 
 	freeaddrinfo(server_info);
-
 	return socket_cliente;
 }
 
